@@ -1,66 +1,46 @@
 <?php
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Retrieve form data
-    $fullName = $_POST['fullName'];
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $phoneNumber = $_POST['phoneNumber'];
-    $domin = $_POST['Domin'];
-    $expFr = $_POST['Exp/fr'];
-    $companyName = $_POST['cn'];
-    $yearsOfExperience = $_POST['ey'];
-    $designation = $_POST['desi'];
-    $ctc = $_POST['ctc'];
-    $gender = isset($_POST['gender']) ? $_POST['gender'] : 'Not Specified';
+require 'vendor/autoload.php'; // Include PhpSpreadsheet library if using Composer
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
-    // File path to store the Excel file
-    $filePath = "submissions.xlsx";
+// File to store data
+$filePath = 'form-data.xlsx';
 
-    // Include PHPExcel library
-    require 'PHPExcel.php';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Collect form data
+    $formData = [
+        'Full Name' => $_POST['fullName'] ?? '',
+        'City' => $_POST['username'] ?? '',
+        'Email' => $_POST['email'] ?? '',
+        'WhatsApp Number' => $_POST['phoneNumber'] ?? '',
+        'Domain' => $_POST['Domin'] ?? '',
+        'Experience/Fresher' => $_POST['Exp/fr'] ?? '',
+        'Company Name' => $_POST['cn'] ?? '',
+        'Years of Experience' => $_POST['ey'] ?? '',
+        'Designation' => $_POST['desi'] ?? '',
+        'CTC' => $_POST['ctc'] ?? '',
+        'Gender' => $_POST['gender'] ?? ''
+    ];
 
-    // Load existing file or create a new one
+    // Load or create an Excel file
     if (file_exists($filePath)) {
-        $spreadsheet = PHPExcel_IOFactory::load($filePath);
-    } else {
-        $spreadsheet = new PHPExcel();
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filePath);
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setCellValue('A1', 'Full Name')
-              ->setCellValue('B1', 'City')
-              ->setCellValue('C1', 'Email')
-              ->setCellValue('D1', 'Phone Number')
-              ->setCellValue('E1', 'Domain')
-              ->setCellValue('F1', 'Experience/Fresher')
-              ->setCellValue('G1', 'Company Name')
-              ->setCellValue('H1', 'Years of Experience')
-              ->setCellValue('I1', 'Designation')
-              ->setCellValue('J1', 'CTC')
-              ->setCellValue('K1', 'Gender');
+    } else {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray(array_keys($formData), NULL, 'A1'); // Add headers
     }
 
-    // Get the active sheet
-    $sheet = $spreadsheet->getActiveSheet();
+    // Append form data to the sheet
+    $sheet->fromArray(array_values($formData), NULL, 'A' . ($sheet->getHighestRow() + 1));
 
-    // Find the next empty row
-    $row = $sheet->getHighestRow() + 1;
-
-    // Write data to the next row
-    $sheet->setCellValue("A$row", $fullName)
-          ->setCellValue("B$row", $username)
-          ->setCellValue("C$row", $email)
-          ->setCellValue("D$row", $phoneNumber)
-          ->setCellValue("E$row", $domin)
-          ->setCellValue("F$row", $expFr)
-          ->setCellValue("G$row", $companyName)
-          ->setCellValue("H$row", $yearsOfExperience)
-          ->setCellValue("I$row", $designation)
-          ->setCellValue("J$row", $ctc)
-          ->setCellValue("K$row", $gender);
-
-    // Save the file
-    $writer = PHPExcel_IOFactory::createWriter($spreadsheet, 'Excel2007');
+    // Save the Excel file
+    $writer = new Xlsx($spreadsheet);
     $writer->save($filePath);
 
-    echo "Data saved successfully!";
+    echo 'Form data saved successfully!';
+} else {
+    echo 'Invalid request method.';
 }
 ?>
